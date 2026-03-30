@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ls -la /c/xampp/htdocs/HERMES/public/*.php)",
+      "Bash(mysql -u root dbhermes -e \"DESCRIBE usuarios; DESCRIBE reportes; DESCRIBE alertas;\")",
+      "Bash(\"/c/xampp/mysql/bin/mysql\" -u root dbhermes -e \"DESCRIBE usuarios; DESCRIBE reportes; DESCRIBE alertas;\")",
+      "Bash(\"/c/xampp/mysql/bin/mysql\" -u root dbhermes -e \":*)",
+      "Bash(\"/c/xampp/php/php\" -r \"echo password_hash\\(''admin123'', PASSWORD_BCRYPT\\);\")"
+    ]
+  }
+}

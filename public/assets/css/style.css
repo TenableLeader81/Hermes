@@ -1,0 +1,168 @@
+/* ============================= */
+/*         HERMES UI            */
+/* ============================= */
+
+:root {
+    --primary-gradient: linear-gradient(90deg, #2563eb, #4f46e5);
+    --bg-color: #d9dde4;
+    --card-bg: #f3f4f6;
+    --text-dark: #1f2937;
+    --text-light: #6b7280;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Segoe UI', sans-serif;
+}
+
+body {
+    background: var(--bg-color);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+}
+
+/* ============================= */
+/* LOGO                         */
+/* ============================= */
+
+.logo-container {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.logo-box {
+    width: 70px;
+    height: 70px;
+    background: var(--primary-gradient);
+    border-radius: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: auto;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+}
+
+.logo-box span {
+    color: white;
+    font-size: 28px;
+}
+
+.logo-container h1 {
+    margin-top: 10px;
+    color: var(--text-dark);
+}
+
+.logo-container p {
+    color: var(--text-light);
+    font-size: 14px;
+}
+
+/* ============================= */
+/* CARD                         */
+/* ============================= */
+
+.card {
+    background: var(--card-bg);
+    padding: 35px;
+    width: 380px;
+    border-radius: 15px;
+    box-shadow: 0 15px 30px rgba(0,0,0,0.15);
+}
+
+.card h2 {
+    text-align: center;
+    margin-bottom: 20px;
+    color: var(--text-dark);
+}
+
+/* ============================= */
+/* INPUTS                       */
+/* ============================= */
+
+.input-group {
+    margin-bottom: 15px;
+}
+
+.input-group label {
+    font-size: 14px;
+    color: var(--text-dark);
+}
+
+.input-group input {
+    width: 100%;
+    padding: 10px;
+    border-radius: 8px;
+    border: 1px solid #d1d5db;
+    margin-top: 5px;
+    background: white;
+}
+
+/* ============================= */
+/* BUTTON                       */
+/* ============================= */
+
+button {
+    width: 100%;
+    padding: 12px;
+    border: none;
+    border-radius: 10px;
+    background: var(--primary-gradient);
+    color: white;
+    font-weight: bold;
+    cursor: pointer;
+    margin-top: 10px;
+    transition: 0.3s ease;
+}
+
+button:hover {
+    transform: translateY(-2px);
+    opacity: 0.9;
+}
+
+/* ============================= */
+/* LINKS                        */
+/* ============================= */
+
+.links {
+    margin-top: 15px;
+    text-align: center;
+    font-size: 14px;
+}
+
+.links a {
+    color: #2563eb;
+    text-decoration: none;
+}
+
+.links a:hover {
+    text-decoration: underline;
+}
+
+/* ============================= */
+/* ERROR                        */
+/* ============================= */
+
+.error {
+    background: #fee2e2;
+    color: #b91c1c;
+    padding: 8px;
+    border-radius: 6px;
+    text-align: center;
+    margin-bottom: 15px;
+    font-size: 14px;
+}
+
+/* ============================= */
+/* FOOTER                       */
+/* ============================= */
+
+.footer {
+    margin-top: 20px;
+    font-size: 12px;
+    color: var(--text-light);
+}
