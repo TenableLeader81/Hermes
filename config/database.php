@@ -58,6 +58,15 @@ $conn->exec("CREATE TABLE IF NOT EXISTS `alertas` (
     CONSTRAINT `alertas_ibfk_1` FOREIGN KEY (`reporte_id`) REFERENCES `reportes` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci");
 
+// Columnas de bloqueo de cuenta (ALTER IGNORE si ya existen)
+foreach ([
+    "ALTER TABLE `usuarios` ADD COLUMN IF NOT EXISTS `login_intentos` TINYINT(1) NOT NULL DEFAULT 0",
+    "ALTER TABLE `usuarios` ADD COLUMN IF NOT EXISTS `login_bloqueado_hasta` DATETIME DEFAULT NULL",
+    "ALTER TABLE `usuarios` ADD COLUMN IF NOT EXISTS `desbloqueo_token` VARCHAR(64) DEFAULT NULL",
+] as $alter) {
+    try { $conn->exec($alter); } catch(PDOException $e) {}
+}
+
 // Insertar admin por defecto si no existe
 $conn->exec("INSERT IGNORE INTO `usuarios` (`nombre`, `correo`, `password_hash`, `matricula`, `rol`)
 VALUES ('Administrador', 'admin@uteq.edu.mx',
