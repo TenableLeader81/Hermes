@@ -1,0 +1,12 @@
+# Credenciales — NUNCA subir al repositorio
+mi-agente-ia/google-key.json
+mi-agente-ia/*.json
+!mi-agente-ia/package.json
+!mi-agente-ia/package-lock.json
+
+# Dependencias Node
+mi-agente-ia/node_modules/
+
+# Archivos del sistema
+.DS_Store
+Thumbs.db
