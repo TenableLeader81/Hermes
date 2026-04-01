@@ -3,11 +3,8 @@ FROM php:8.2-apache
 # Instalar extensiones PHP
 RUN docker-php-ext-install pdo pdo_mysql mysqli
 
-# Limpiar todos los MPM habilitados y dejar solo prefork
-RUN find /etc/apache2/mods-enabled -name "mpm_*" -delete && \
-    ln -sf /etc/apache2/mods-available/mpm_prefork.conf /etc/apache2/mods-enabled/mpm_prefork.conf && \
-    ln -sf /etc/apache2/mods-available/mpm_prefork.load /etc/apache2/mods-enabled/mpm_prefork.load && \
-    a2enmod rewrite
+# Habilitar rewrite
+RUN a2enmod rewrite
 
 # Apuntar DocumentRoot a /public
 ENV APACHE_DOCUMENT_ROOT /var/www/html/public
@@ -18,7 +15,10 @@ RUN sed -ri -e 's!/var/www/html!/var/www/html/public!g' \
 
 # Copiar código
 COPY . /var/www/html/
-
 RUN chown -R www-data:www-data /var/www/html
 
-EXPOSE 80
+# Script que usa $PORT de Railway
+COPY docker-start.sh /docker-start.sh
+RUN chmod +x /docker-start.sh
+
+CMD ["/docker-start.sh"]
