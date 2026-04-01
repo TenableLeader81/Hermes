@@ -1,21 +1,21 @@
 <?php
 session_start();
-require_once "../config/database.php";
-require_once "../libs/Mailer.php";
+require_once __DIR__ . "/../config/database.php";
+require_once __DIR__ . "/../libs/Mailer.php";
 
 /* ── Protección de acceso ── */
 if(!isset($_SESSION['user_id'])){
-    header("Location: ../public/login.php");
+    header("Location: /login.php");
     exit;
 }
 
 if($_SESSION['rol'] === 'admin'){
-    header("Location: ../public/admin/dashboard.php");
+    header("Location: /admin/dashboard.php");
     exit;
 }
 
 if($_SERVER['REQUEST_METHOD'] !== 'POST'){
-    header("Location: ../public/crear_reporte.php");
+    header("Location: /crear_reporte.php");
     exit;
 }
 
@@ -30,19 +30,19 @@ $categoriasValidas = ['Robo', 'Accidente', 'Falla electrica'];
 
 if(!in_array($categoria, $categoriasValidas)){
     $_SESSION['reporte_error'] = "Selecciona un tipo de incidente válido.";
-    header("Location: ../public/crear_reporte.php");
+    header("Location: /crear_reporte.php");
     exit;
 }
 
 if(empty($subcategoria)){
     $_SESSION['reporte_error'] = "Selecciona una subcategoría.";
-    header("Location: ../public/crear_reporte.php");
+    header("Location: /crear_reporte.php");
     exit;
 }
 
 if(!is_numeric($latitud) || !is_numeric($longitud)){
     $_SESSION['reporte_error'] = "No se pudo obtener tu ubicación. Permite el GPS e intenta de nuevo.";
-    header("Location: ../public/crear_reporte.php");
+    header("Location: /crear_reporte.php");
     exit;
 }
 
@@ -97,5 +97,5 @@ try {
     $_SESSION['reporte_error'] = "Error al guardar el reporte. Intenta de nuevo.";
 }
 
-header("Location: ../public/crear_reporte.php");
+header("Location: /crear_reporte.php");
 exit;
