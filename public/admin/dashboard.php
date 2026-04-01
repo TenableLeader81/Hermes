@@ -28,9 +28,10 @@ $stmtRep = $conn->prepare("
     SELECT
         r.id, r.categoria, r.subcategoria, r.descripcion,
         r.latitud, r.longitud, r.visibilidad, r.estado, r.fecha_hora,
-        u.nombre AS alumno_nombre, u.matricula AS alumno_matricula
+        COALESCE(u.nombre, 'Dispositivo IoT') AS alumno_nombre,
+        COALESCE(u.matricula, 'SOS')          AS alumno_matricula
     FROM reportes r
-    JOIN usuarios u ON u.id = r.usuario_id
+    LEFT JOIN usuarios u ON u.id = r.usuario_id
     ORDER BY r.id DESC
     LIMIT 100
 ");
@@ -66,22 +67,32 @@ $reportesIniciales = $stmtRep->fetchAll(PDO::FETCH_ASSOC);
         @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
         .badge-tab { display:inline-block; background:#ef4444; color:#fff; border-radius:50%; font-size:10px; min-width:16px; height:16px; line-height:16px; text-align:center; padding:0 3px; margin-left:5px; vertical-align:middle; }
         .sin-reportes { color:#9ca3af; font-style:italic; font-size:13px; padding:20px 0; text-align:center; }
-        #mapa-admin { height:360px; border-radius:12px; }
+        #mapa-admin { height:520px; border-radius:12px; }
         .main { overflow-y:auto; }
         .toast { position:fixed; bottom:30px; right:30px; background:#1f2937; color:#fff; padding:14px 20px; border-radius:12px; font-size:14px; z-index:9999; max-width:320px; box-shadow:0 4px 20px rgba(0,0,0,.3); animation:slideIn .3s ease; }
         .toast.falla     { border-left:4px solid #3b82f6; }
         .toast.robo      { border-left:4px solid #ef4444; }
         .toast.accidente { border-left:4px solid #f59e0b; }
         @keyframes slideIn { from{transform:translateY(20px);opacity:0} to{transform:translateY(0);opacity:1} }
+        @media (max-width: 768px) {
+            #sidebarToggle { display:inline-flex !important; }
+            .sidebar { position:fixed;top:0;left:-260px;height:100vh;z-index:1000;transition:left .3s ease;box-shadow:4px 0 20px rgba(0,0,0,.15); }
+            .sidebar.open { left:0; }
+            .sidebar-overlay { display:block !important; }
+        }
     </style>
 </head>
 <body>
 <div class="layout">
 
+    <!-- Overlay móvil -->
+    <div class="sidebar-overlay" onclick="cerrarSidebar()"
+         style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:999;"></div>
+
     <!-- SIDEBAR -->
-    <div class="sidebar">
+    <div class="sidebar" id="sidebar">
         <div class="logo">
-            <div class="logo-icon">🛡</div>
+            <div class="logo-icon">📍</div>
             <div><h2>HERMES</h2><span>Panel de Dirección</span></div>
         </div>
         <nav>
@@ -100,9 +111,10 @@ $reportesIniciales = $stmtRep->fetchAll(PDO::FETCH_ASSOC);
     <!-- MAIN -->
     <div class="main">
 
-        <div class="header">
+        <div class="header" style="display:flex;align-items:center;gap:12px;">
+            <button id="sidebarToggle" onclick="abrirSidebar()"
+                    style="display:none;background:#6366f1;color:#fff;border:none;border-radius:8px;padding:8px 12px;cursor:pointer;font-size:18px;flex-shrink:0;">☰</button>
             <h1>Panel de Dirección</h1>
-            <span class="status">🟢 Sistema Activo</span>
         </div>
 
         <!-- TABS -->
@@ -117,6 +129,9 @@ $reportesIniciales = $stmtRep->fetchAll(PDO::FETCH_ASSOC);
             </button>
             <button class="tab-btn" onclick="cambiarTab('mapa')">
                 🗺 Mapa
+            </button>
+            <button class="tab-btn" onclick="cambiarTab('exportar')">
+                📥 Exportar CSV
             </button>
         </div>
 
@@ -137,6 +152,37 @@ $reportesIniciales = $stmtRep->fetchAll(PDO::FETCH_ASSOC);
         <!-- TAB: MAPA -->
         <div class="tab-panel" id="tab-mapa">
             <div id="mapa-admin"></div>
+        </div>
+
+        <!-- TAB: EXPORTAR CSV -->
+        <div class="tab-panel" id="tab-exportar">
+            <div style="background:#fff;border-radius:16px;padding:24px;box-shadow:0 2px 12px rgba(0,0,0,.06);">
+                <h3 style="margin:0 0 16px;font-size:15px;color:#1f2937;">📥 Exportar Reportes</h3>
+                <p style="font-size:13px;color:#6b7280;margin-bottom:20px;">Descarga todos los reportes registrados en formato CSV para análisis externo.</p>
+
+                <div style="display:flex;flex-wrap:wrap;gap:12px;">
+                    <a href="../api/exportar_csv.php" download
+                       style="display:inline-flex;align-items:center;gap:8px;background:#6366f1;color:#fff;padding:10px 20px;border-radius:10px;font-size:13px;font-weight:600;text-decoration:none;">
+                        ⬇ Descargar todos los reportes
+                    </a>
+                    <a href="../api/exportar_csv.php?categoria=Robo" download
+                       style="display:inline-flex;align-items:center;gap:8px;background:#ef4444;color:#fff;padding:10px 20px;border-radius:10px;font-size:13px;font-weight:600;text-decoration:none;">
+                        🚨 Solo Robos
+                    </a>
+                    <a href="../api/exportar_csv.php?categoria=Accidente" download
+                       style="display:inline-flex;align-items:center;gap:8px;background:#f59e0b;color:#fff;padding:10px 20px;border-radius:10px;font-size:13px;font-weight:600;text-decoration:none;">
+                        🚑 Solo Accidentes
+                    </a>
+                    <a href="../api/exportar_csv.php?categoria=Falla+electrica" download
+                       style="display:inline-flex;align-items:center;gap:8px;background:#3b82f6;color:#fff;padding:10px 20px;border-radius:10px;font-size:13px;font-weight:600;text-decoration:none;">
+                        ⚡ Solo Fallas
+                    </a>
+                    <a href="../api/exportar_csv.php?categoria=SOS" download
+                       style="display:inline-flex;align-items:center;gap:8px;background:#dc2626;color:#fff;padding:10px 20px;border-radius:10px;font-size:13px;font-weight:600;text-decoration:none;">
+                        🆘 Solo SOS
+                    </a>
+                </div>
+            </div>
         </div>
 
     </div>
@@ -285,10 +331,20 @@ function polling() {
                     actualizarBadge('badgeIncidentes', nuevosIncidentes);
                 }
 
-                mostrarToast(
-                    (r.visibilidad === 'interna' ? '⚡ Nueva falla: ' : '🚨 Nuevo incidente: ') + r.subcategoria,
-                    r.visibilidad === 'interna' ? 'falla' : (r.categoria === 'Robo' ? 'robo' : 'accidente')
-                );
+                const tipoToast = r.categoria === 'SOS' ? 'robo'
+                    : r.visibilidad === 'interna' ? 'falla'
+                    : (r.categoria === 'Robo' ? 'robo' : 'accidente');
+
+                const msgToast = r.categoria === 'SOS'
+                    ? '🆘 EMERGENCIA SOS — Botón de pánico activado'
+                    : (r.visibilidad === 'interna' ? '⚡ Nueva falla: ' : '🚨 Nuevo incidente: ') + r.subcategoria;
+
+                mostrarToast(msgToast, tipoToast);
+
+                // Agregar marcador al mapa si está iniciado
+                if (mapaIniciado) {
+                    agregarMarcadorMapa(r);
+                }
             });
         });
 }
@@ -319,29 +375,41 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
 let mapa;
 
 function iniciarMapa() {
-    mapa = L.map('mapa-admin').setView([20.5881, -100.3899], 15);
+    mapa = L.map('mapa-admin', { minZoom: 14, maxZoom: 19 }).setView([20.65636, -100.40507], 16);
+
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© OpenStreetMap contributors'
+        attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+        maxZoom: 19
     }).addTo(mapa);
 
     const iconos = {
         'Robo':           L.divIcon({ className:'', html:'<div style="font-size:24px;filter:drop-shadow(0 0 4px #ef4444)">🚨</div>' }),
         'Accidente':      L.divIcon({ className:'', html:'<div style="font-size:24px;filter:drop-shadow(0 0 4px #f59e0b)">🚑</div>' }),
         'Falla electrica':L.divIcon({ className:'', html:'<div style="font-size:24px;filter:drop-shadow(0 0 4px #3b82f6)">⚡</div>' }),
+        'SOS':            L.divIcon({ className:'', html:'<div style="font-size:32px;filter:drop-shadow(0 0 8px #dc2626)">🆘</div>' }),
     };
 
-    const estiloRadio = {
-        'Robo':           { color: '#ef4444', fillColor: '#ef4444', fillOpacity: 0.12, radius: 120 },
-        'Accidente':      { color: '#f59e0b', fillColor: '#f59e0b', fillOpacity: 0.12, radius: 100 },
-        'Falla electrica':{ color: '#3b82f6', fillColor: '#3b82f6', fillOpacity: 0.10, radius:  80 },
-    };
+    // Solo reportes de las últimas 2 horas
+    const hace2h = Date.now() - 2 * 60 * 60 * 1000;
+    const recientes = reportesIniciales.filter(r => {
+        return new Date(r.fecha_hora.replace(' ', 'T')).getTime() >= hace2h;
+    });
 
-    reportesIniciales.forEach(r => {
-        const latlng = [r.latitud, r.longitud];
-        const estilo = estiloRadio[r.categoria] || estiloRadio['Robo'];
-        const icono  = iconos[r.categoria]      || iconos['Robo'];
+    // Jitter para coordenadas duplicadas
+    const coordCount = {};
+    recientes.forEach(r => {
+        const k = r.latitud + ',' + r.longitud;
+        coordCount[k] = (coordCount[k] || 0) + 1;
+    });
+    const coordIdx = {};
 
-        L.circle(latlng, { ...estilo, weight: 2 }).addTo(mapa);
+    recientes.forEach(r => {
+        const k = r.latitud + ',' + r.longitud;
+        coordIdx[k] = (coordIdx[k] || 0) + 1;
+        const offset = coordCount[k] > 1 ? (coordIdx[k] - 1) * 0.00003 : 0;
+
+        const latlng = [parseFloat(r.latitud) + offset, parseFloat(r.longitud) + offset];
+        const icono  = iconos[r.categoria] || iconos['Robo'];
 
         L.marker(latlng, { icon: icono })
             .addTo(mapa)
@@ -374,6 +442,15 @@ function formatHora(fechaStr) {
     if(diff < 3600)  return 'Hace ' + Math.floor(diff/60) + ' min';
     if(diff < 86400) return 'Hace ' + Math.floor(diff/3600) + ' h';
     return fecha.toLocaleDateString('es-MX');
+}
+
+function abrirSidebar() {
+    document.getElementById('sidebar').classList.add('open');
+    document.querySelector('.sidebar-overlay').style.display = 'block';
+}
+function cerrarSidebar() {
+    document.getElementById('sidebar').classList.remove('open');
+    document.querySelector('.sidebar-overlay').style.display = 'none';
 }
 
 /* ── Inicio ── */

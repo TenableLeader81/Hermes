@@ -1,8 +1,13 @@
-<?php session_start(); ?>
+<?php
+session_start();
+$correo_previo = $_SESSION['login_correo'] ?? '';
+unset($_SESSION['login_correo']);
+?>
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - HERMES</title>
     <link rel="stylesheet" href="assets/css/style.css">
 </head>
@@ -10,10 +15,10 @@
 
 <div class="logo-container">
     <div class="logo-box">
-        <span>🛡</span>
+        <span>📍</span>
     </div>
     <h1>HERMES</h1>
-    <p>Sistema de Seguridad - Universidad</p>
+    <p>Sistema de Seguridad — UTEQ</p>
 </div>
 
 <div class="card">
@@ -21,15 +26,22 @@
 
     <?php if(isset($_SESSION['error'])): ?>
         <div class="error">
-            <?php echo $_SESSION['error']; unset($_SESSION['error']); ?>
+            <?php echo htmlspecialchars($_SESSION['error']); unset($_SESSION['error']); ?>
+        </div>
+    <?php endif; ?>
+
+    <?php if(isset($_SESSION['success'])): ?>
+        <div class="success">
+            <?php echo htmlspecialchars($_SESSION['success']); unset($_SESSION['success']); ?>
         </div>
     <?php endif; ?>
 
     <form action="../controllers/AuthController.php" method="POST">
 
         <div class="input-group">
-            <label>Correo</label>
-            <input type="email" name="correo" placeholder="usuario@universidad.edu" required>
+            <label>Correo institucional</label>
+            <input type="email" name="correo" placeholder="matricula@uteq.edu.mx" required
+                   value="<?php echo htmlspecialchars($correo_previo); ?>">
         </div>
 
         <div class="input-group">

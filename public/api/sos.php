@@ -42,17 +42,21 @@ try {
     /* ── 2. Crear alerta (activa 4 horas) ── */
     $stmtA = $conn->prepare("
         INSERT INTO alertas (reporte_id, estado, fecha_expiracion)
-        VALUES (:reporte_id, 'activa', DATE_ADD(NOW(), INTERVAL 4 HOUR))
+        VALUES (:reporte_id, 'activa', DATE_ADD(NOW(), INTERVAL 2 HOUR))
     ");
     $stmtA->execute([':reporte_id' => $reporteId]);
 
     /* ── 3. Notificar a todos los usuarios registrados ── */
-    $usuarios = $conn->query("SELECT nombre, correo FROM usuarios")->fetchAll(PDO::FETCH_ASSOC);
+    $usuarios = $conn->query("SELECT nombre, correo, rol FROM usuarios")->fetchAll(PDO::FETCH_ASSOC);
     $asunto   = "🆘 EMERGENCIA EN CAMPUS UTEQ – Se necesita ayuda";
+    $html     = Mailer::plantillaSOS($lat, $lon, $mapsUrl, $fecha);
 
     foreach ($usuarios as $u) {
-        $html = Mailer::plantillaSOS($lat, $lon, $mapsUrl, $fecha);
-        Mailer::enviar($u['correo'], $u['nombre'], $asunto, $html);
+        try {
+            Mailer::enviar($u['correo'], $u['nombre'], $asunto, $html);
+        } catch (Exception $e) {
+            error_log("[SOS] Error al enviar a {$u['correo']} ({$u['rol']}): " . $e->getMessage());
+        }
     }
 
     echo "OK";

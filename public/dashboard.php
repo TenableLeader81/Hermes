@@ -51,6 +51,21 @@ if(!$user){
         .toast.accidente { border-left:4px solid #f59e0b; }
         .toast.resuelta  { border-left:4px solid #10b981; }
         @keyframes slideIn { from{transform:translateY(20px);opacity:0} to{transform:translateY(0);opacity:1} }
+
+        /* ── CHAT IA ── */
+        .chat-section { background:#fff; border-radius:16px; padding:20px; margin-top:24px; box-shadow:0 2px 12px rgba(0,0,0,.06); }
+        .chat-section h3 { margin:0 0 14px; font-size:15px; color:#1f2937; }
+        .chat-mensajes { height:280px; overflow-y:auto; display:flex; flex-direction:column; gap:10px; padding:4px 0 10px; }
+        .chat-burbuja { max-width:80%; padding:10px 14px; border-radius:16px; font-size:13px; line-height:1.5; word-break:break-word; }
+        .chat-burbuja.usuario { align-self:flex-end; background:#6366f1; color:#fff; border-bottom-right-radius:4px; }
+        .chat-burbuja.agente  { align-self:flex-start; background:#f3f4f6; color:#1f2937; border-bottom-left-radius:4px; }
+        .chat-burbuja.error   { align-self:flex-start; background:#fee2e2; color:#991b1b; border-bottom-left-radius:4px; }
+        .chat-escribiendo     { align-self:flex-start; background:#f3f4f6; color:#6b7280; font-size:13px; padding:10px 14px; border-radius:16px; border-bottom-left-radius:4px; font-style:italic; }
+        .chat-input-row { display:flex; gap:8px; margin-top:10px; }
+        .chat-input-row input { flex:1; padding:10px 14px; border:1px solid #e5e7eb; border-radius:10px; font-size:13px; outline:none; }
+        .chat-input-row input:focus { border-color:#6366f1; }
+        .chat-input-row button { background:#6366f1; color:#fff; border:none; border-radius:10px; padding:10px 18px; cursor:pointer; font-size:13px; font-weight:600; }
+        .chat-input-row button:disabled { background:#a5b4fc; cursor:not-allowed; }
     </style>
 </head>
 <body>
@@ -60,7 +75,7 @@ if(!$user){
     <!-- SIDEBAR -->
     <div class="sidebar">
         <div class="logo">
-            <div class="logo-icon">🛡</div>
+            <div class="logo-icon">📍</div>
             <div>
                 <h2>HERMES</h2>
                 <span>Seguridad Campus</span>
@@ -119,6 +134,19 @@ if(!$user){
             </div>
 
         </div>
+
+        <!-- CHAT IA -->
+        <div class="chat-section">
+            <h3>🤖 Asistente HERMES</h3>
+            <div class="chat-mensajes" id="chatMensajes">
+                <div class="chat-burbuja agente">Hola, soy el asistente de HERMES. Puedo responderte preguntas sobre los incidentes registrados en el campus. ¿En qué te puedo ayudar?</div>
+            </div>
+            <div class="chat-input-row">
+                <input type="text" id="chatInput" placeholder="Escribe tu pregunta…" maxlength="500" />
+                <button id="chatEnviar">Enviar</button>
+            </div>
+        </div>
+
     </div>
 </div>
 
@@ -130,9 +158,9 @@ if(!$user){
 ═══════════════════════════════════════ */
 const mapa = L.map('mapa', { minZoom: 14, maxZoom: 19 }).setView([20.65636, -100.40507], 16); // UTEQ
 
-L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-    attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors © <a href="https://carto.com/">CARTO</a>',
-    subdomains: 'abcd'
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+    maxZoom: 19
 }).addTo(mapa);
 
 // Iconos por categoría
@@ -143,15 +171,7 @@ const iconos = {
     'SOS':            L.divIcon({ className:'', html:'<div style="font-size:32px;filter:drop-shadow(0 0 8px #dc2626);animation:pulse 0.8s infinite">🆘</div>' }),
 };
 
-// Radio y color por categoría (en metros)
-const estiloRadio = {
-    'Robo':           { color: '#ef4444', fillColor: '#ef4444', fillOpacity: 0.12, radius: 120 },
-    'Accidente':      { color: '#f59e0b', fillColor: '#f59e0b', fillOpacity: 0.12, radius: 100 },
-    'Falla electrica':{ color: '#3b82f6', fillColor: '#3b82f6', fillOpacity: 0.10, radius:  80 },
-    'SOS':            { color: '#dc2626', fillColor: '#dc2626', fillOpacity: 0.25, radius: 200 },
-};
-
-let capas = {}; // guarda { marker, circulo } por reporte id
+let capas = {};
 
 function cargarMarcadores() {
     fetch('api/reportes_mapa.php')
@@ -159,25 +179,25 @@ function cargarMarcadores() {
         .then(data => {
             if(data.error) return;
 
-            // Limpiar capas anteriores
-            Object.values(capas).forEach(({ marker, circulo }) => {
-                mapa.removeLayer(marker);
-                mapa.removeLayer(circulo);
-            });
+            Object.values(capas).forEach(({ marker }) => mapa.removeLayer(marker));
             capas = {};
 
+            // Jitter para coordenadas duplicadas
+            const coordCount = {};
             data.reportes.forEach(r => {
-                const latlng = [r.latitud, r.longitud];
-                const estilo = estiloRadio[r.categoria] || estiloRadio['Robo'];
-                const icono  = iconos[r.categoria]      || iconos['Robo'];
+                const key = r.latitud + ',' + r.longitud;
+                coordCount[key] = (coordCount[key] || 0) + 1;
+            });
+            const coordIdx = {};
 
-                // Círculo de radio
-                const circulo = L.circle(latlng, {
-                    ...estilo,
-                    weight: 2,
-                }).addTo(mapa);
+            data.reportes.forEach(r => {
+                const key = r.latitud + ',' + r.longitud;
+                coordIdx[key] = (coordIdx[key] || 0) + 1;
+                const offset = coordCount[key] > 1 ? (coordIdx[key] - 1) * 0.00003 : 0;
 
-                // Marcador con popup
+                const latlng = [parseFloat(r.latitud) + offset, parseFloat(r.longitud) + offset];
+                const icono  = iconos[r.categoria] || iconos['Robo'];
+
                 const marker = L.marker(latlng, { icon: icono })
                     .addTo(mapa)
                     .bindPopup(
@@ -187,7 +207,7 @@ function cargarMarcadores() {
                         `<small>${formatHora(r.fecha_hora)}</small>`
                     );
 
-                capas[r.id] = { marker, circulo };
+                capas[r.id] = { marker };
             });
         });
 }
@@ -304,6 +324,58 @@ setInterval(() => {
     cargarAlertas(false);
     cargarMarcadores();
 }, 10000);
+</script>
+
+<script>
+/* ═══════════════════════════════════════
+   CHAT IA — HERMES Agent
+═══════════════════════════════════════ */
+const chatMensajes = document.getElementById('chatMensajes');
+const chatInput    = document.getElementById('chatInput');
+const chatEnviar   = document.getElementById('chatEnviar');
+
+function agregarBurbuja(texto, tipo) {
+    const div = document.createElement('div');
+    div.className = 'chat-burbuja ' + tipo;
+    div.textContent = texto;
+    chatMensajes.appendChild(div);
+    chatMensajes.scrollTop = chatMensajes.scrollHeight;
+}
+
+async function enviarMensaje() {
+    const mensaje = chatInput.value.trim();
+    if (!mensaje) return;
+
+    chatInput.value = '';
+    chatEnviar.disabled = true;
+    agregarBurbuja(mensaje, 'usuario');
+
+    const escribiendo = document.createElement('div');
+    escribiendo.className = 'chat-escribiendo';
+    escribiendo.textContent = 'Escribiendo…';
+    chatMensajes.appendChild(escribiendo);
+    chatMensajes.scrollTop = chatMensajes.scrollHeight;
+
+    try {
+        const res = await fetch('api/chat.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ mensaje })
+        });
+        const data = await res.json();
+        escribiendo.remove();
+        agregarBurbuja(data.error ? 'Error: ' + data.error : data.respuesta, data.error ? 'error' : 'agente');
+    } catch (e) {
+        escribiendo.remove();
+        agregarBurbuja('No se pudo conectar al asistente.', 'error');
+    }
+
+    chatEnviar.disabled = false;
+    chatInput.focus();
+}
+
+chatEnviar.addEventListener('click', enviarMensaje);
+chatInput.addEventListener('keydown', e => { if (e.key === 'Enter') enviarMensaje(); });
 </script>
 
 </body>
