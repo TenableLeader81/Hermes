@@ -1,17 +1,13 @@
 <?php
 /* ═══════════════════════════════════════
-   Configuración SMTP — Gmail
+   Configuración Email — Brevo API
+   (Railway bloquea SMTP, usamos HTTP API)
    ─────────────────────────────────────
-   1. Ve a myaccount.google.com
-   2. Seguridad → Verificación en 2 pasos (actívala)
-   3. Seguridad → Contraseñas de aplicaciones
-   4. Genera una contraseña para "Correo / Windows"
-   5. Pega esa contraseña de 16 caracteres en MAIL_PASS
+   1. Crea cuenta gratis en brevo.com
+   2. My Account → SMTP & API → API Keys
+   3. Pega la API key en BREVO_API_KEY
 ═══════════════════════════════════════ */
 
-define('MAIL_HOST',      'smtp.gmail.com');
-define('MAIL_PORT',      587);
-define('MAIL_USER',      'hermeseguridad19@gmail.com');  // ← tu correo Gmail
-define('MAIL_PASS',      'gxfg zikg kjlx kgop');               // ← contraseña de aplicación (16 chars)
-define('MAIL_FROM',      'hermeseguridad19@gmail.com'); // ← mismo correo
+define('BREVO_API_KEY',  getenv('BREVO_API_KEY') ?: 'TU_API_KEY_AQUI');
+define('MAIL_FROM',      'hermeseguridad19@gmail.com');
 define('MAIL_FROM_NAME', 'HERMES – Seguridad UTEQ');
