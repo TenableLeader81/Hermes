@@ -1,29 +1,70 @@
 <?php
 session_start();
-if (!isset($_SESSION['user_id'])) {
-    die("Acceso denegado. Inicia sesión primero.");
+if (!isset($_SESSION['user_id']) || $_SESSION['rol'] !== 'admin') {
+    die("Solo admins.");
+}
+require_once __DIR__ . "/../config/mail.php";
+
+echo "<pre>";
+
+// Test 1: conexión TCP a smtp.gmail.com:587
+echo "Probando conexión TCP a smtp.gmail.com:587...\n";
+$sock = @stream_socket_client("tcp://smtp.gmail.com:587", $errno, $errstr, 10);
+if (!$sock) {
+    echo "FALLO puerto 587: $errno - $errstr\n";
+    echo "\nProbando puerto 465 (SSL)...\n";
+    $sock2 = @stream_socket_client("ssl://smtp.gmail.com:465", $errno2, $errstr2, 10);
+    if (!$sock2) {
+        echo "FALLO puerto 465: $errno2 - $errstr2\n";
+        echo "\nRAILWAY BLOQUEA SMTP. Necesitamos otra solucion.\n";
+    } else {
+        echo "Puerto 465 funciona!\n";
+        fclose($sock2);
+    }
+    die("</pre>");
 }
 
-require_once "../libs/Mailer.php";
-require_once "../config/database.php";
+echo "Conexion TCP exitosa!\n";
+$resp = fgets($sock, 515);
+echo "Servidor: $resp";
 
-$resultado = Mailer::enviar(
-    MAIL_USER,          // se manda a sí mismo como prueba
-    'Prueba HERMES',
-    '✅ Prueba de conexión SMTP – HERMES',
-    Mailer::plantillaAlerta('Robo', 'Hurto', 'Este es un correo de prueba.', date('d/m/Y H:i'))
-);
+fwrite($sock, "EHLO localhost\r\n");
+while ($line = fgets($sock, 515)) {
+    echo $line;
+    if (isset($line[3]) && $line[3] === ' ') break;
+}
 
-if ($resultado) {
-    echo "<h2 style='color:green;font-family:sans-serif'>✅ Correo enviado correctamente a " . MAIL_USER . "</h2>";
-    echo "<p style='font-family:sans-serif'>Revisa tu bandeja de entrada (o spam).</p>";
+fwrite($sock, "STARTTLS\r\n");
+echo fgets($sock, 515);
+
+if (!stream_socket_enable_crypto($sock, true, STREAM_CRYPTO_METHOD_TLSv1_2_CLIENT)) {
+    echo "FALLO TLS\n";
+    fclose($sock);
+    die("</pre>");
+}
+echo "TLS OK\n";
+
+fwrite($sock, "EHLO localhost\r\n");
+while ($line = fgets($sock, 515)) {
+    echo $line;
+    if (isset($line[3]) && $line[3] === ' ') break;
+}
+
+fwrite($sock, "AUTH LOGIN\r\n");
+echo fgets($sock, 515);
+fwrite($sock, base64_encode(MAIL_USER) . "\r\n");
+echo fgets($sock, 515);
+fwrite($sock, base64_encode(MAIL_PASS) . "\r\n");
+$auth = fgets($sock, 515);
+echo "Auth: $auth";
+
+if (substr(trim($auth), 0, 3) === '235') {
+    echo "AUTENTICACION EXITOSA. SMTP funciona correctamente.\n";
 } else {
-    echo "<h2 style='color:red;font-family:sans-serif'>❌ No se pudo conectar al servidor SMTP</h2>";
-    echo "<ul style='font-family:sans-serif'>
-        <li>Verifica que <strong>MAIL_PASS</strong> sea una <em>contraseña de aplicación</em> de Gmail (16 caracteres).</li>
-        <li>Asegúrate de tener la <strong>verificación en 2 pasos</strong> activada en tu cuenta Google.</li>
-        <li>Comprueba que XAMPP tenga acceso a internet (puerto 587).</li>
-    </ul>";
+    echo "FALLO AUTENTICACION.\n";
 }
+
+fwrite($sock, "QUIT\r\n");
+fclose($sock);
+echo "</pre>";
 ?>
-<p style='font-family:sans-serif'><a href='dashboard.php'>← Volver al dashboard</a></p>
