@@ -2,7 +2,7 @@
   "status": "commited",
   "type": "frontend",
   "scope": "codebase",
-  "localEndpoint": "http://localhost:80/HERMES/public/",
-  "loginUser": "2020171001@uteq.edu.mx",
-  "loginPassword": "pass123"
+  "localEndpoint": "https://hermes-production-9a8e.up.railway.app/",
+  "loginUser": "alumno.demo@uteq.edu.mx",
+  "loginPassword": "Test1234"
 }
