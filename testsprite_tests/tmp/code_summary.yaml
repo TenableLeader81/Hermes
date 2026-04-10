@@ -1,0 +1,183 @@
+version: "2"
+type: frontend
+tech_stack:
+  - language: PHP 8.2
+  - framework: Vanilla PHP (no framework)
+  - ui_library: Custom CSS + Leaflet.js
+  - other: MariaDB 10.4, XAMPP, Google Authenticator (TOTP/2FA), OpenStreetMap
+
+routes:
+  - path: /HERMES/public/index.php
+    file: public/index.php
+    auth_required: false
+    description: Landing page
+  - path: /HERMES/public/login.php
+    file: public/login.php
+    auth_required: false
+    description: User login page
+  - path: /HERMES/public/register.php
+    file: public/register.php
+    auth_required: false
+    description: User registration page
+  - path: /HERMES/public/verificar_2fa.php
+    file: public/verificar_2fa.php
+    auth_required: false
+    description: Two-factor authentication verification page (requires temp_user_2fa session)
+  - path: /HERMES/public/dashboard.php
+    file: public/dashboard.php
+    auth_required: true
+    description: Main user dashboard with real-time map and alerts
+  - path: /HERMES/public/crear_reporte.php
+    file: public/crear_reporte.php
+    auth_required: true
+    description: Form to create a new incident report
+  - path: /HERMES/public/admin/dashboard.php
+    file: public/admin/dashboard.php
+    auth_required: true
+    description: Admin panel to view and manage all reports
+  - path: /HERMES/public/activar_2fa.php
+    file: public/activar_2fa.php
+    auth_required: true
+    description: Page to activate two-factor authentication
+  - path: /HERMES/public/confirmar_2fa.php
+    file: public/confirmar_2fa.php
+    auth_required: true
+    description: Page to confirm 2FA setup with a TOTP code
+  - path: /HERMES/public/api/alertas.php
+    file: public/api/alertas.php
+    auth_required: false
+    description: JSON API endpoint returning active alerts (polled every 10s)
+  - path: /HERMES/public/api/reportes_mapa.php
+    file: public/api/reportes_mapa.php
+    auth_required: false
+    description: JSON API endpoint returning report locations for the map
+  - path: /HERMES/public/api/sos.php
+    file: public/api/sos.php
+    auth_required: false
+    description: JSON API endpoint to trigger SOS/panic button alert
+  - path: /HERMES/public/desbloquear.php
+    file: public/desbloquear.php
+    auth_required: false
+    description: Page to unlock a user account
+
+features:
+  - name: User Registration
+    description: Create a new university student account with name, matricula, email, and password
+    files:
+      - public/register.php
+      - controllers/AuthController.php
+    entry_route: /HERMES/public/register.php
+    user_interactions:
+      - Fill nombre(s) input field
+      - Fill apellido paterno input field
+      - Fill apellido materno input field
+      - Fill matricula input field
+      - Fill correo (email) input field
+      - Fill password input field (must be 8+ chars, 1 uppercase, 1 special char)
+      - Watch real-time password requirement indicators turn green
+      - Click "Crear Cuenta" button (enabled only when all requirements met)
+      - See success or error message after submission
+    api_calls: []
+    auth_required: false
+
+  - name: User Login
+    description: Log in with email and password credentials
+    files:
+      - public/login.php
+      - controllers/AuthController.php
+    entry_route: /HERMES/public/login.php
+    user_interactions:
+      - Fill correo (email) input field
+      - Fill password input field
+      - Click "Iniciar Sesión" button
+      - See error message on invalid credentials
+      - Get redirected to dashboard on success (or 2FA page if enabled)
+    api_calls: []
+    auth_required: false
+
+  - name: Two-Factor Authentication Verification
+    description: Verify login with a 6-digit TOTP code from Google Authenticator
+    files:
+      - public/verificar_2fa.php
+      - controllers/AuthController.php
+      - libs/GoogleAuthenticator.php
+    entry_route: /HERMES/public/verificar_2fa.php
+    user_interactions:
+      - Enter 6-digit TOTP code from Google Authenticator app
+      - Click "Verificar" button
+      - See error message if code is incorrect
+      - Get redirected to dashboard on success
+      - Click "Volver al inicio de sesión" link to cancel
+    api_calls: []
+    auth_required: false
+
+  - name: User Dashboard
+    description: View campus security map with incident markers and real-time alerts panel
+    files:
+      - public/dashboard.php
+      - public/api/alertas.php
+      - public/api/reportes_mapa.php
+    entry_route: /HERMES/public/dashboard.php
+    user_interactions:
+      - View Leaflet map centered on UTEQ campus with incident markers (Robo, Accidente, Falla electrica, SOS)
+      - Click map markers to see incident popups with category, subcategory, description, and time
+      - View real-time alerts list in the right panel (auto-refreshed every 10 seconds)
+      - See toast notifications when new alerts arrive
+      - See alert counter badge for new alerts
+      - Toggle sidebar on mobile with hamburger button
+      - Navigate to "Crear Reporte" via sidebar
+      - Log out via sidebar
+    api_calls:
+      - method: GET
+        endpoint: /HERMES/public/api/alertas.php?desde_id={id}
+      - method: GET
+        endpoint: /HERMES/public/api/reportes_mapa.php
+    auth_required: true
+
+  - name: Create Incident Report
+    description: Submit a new incident report with category, subcategory, description, and GPS location
+    files:
+      - public/crear_reporte.php
+      - controllers/ReporteController.php
+    entry_route: /HERMES/public/crear_reporte.php
+    user_interactions:
+      - Click one of three incident type cards (Robo, Accidente, Falla de Servicio)
+      - Select a subcategory from the dropdown that appears
+      - Optionally write a description in the textarea
+      - Allow browser to obtain GPS coordinates (location box shows status)
+      - Click "Enviar Reporte" button (enabled only when type, subcategory, and GPS are ready)
+      - See success or error message after submission
+    api_calls:
+      - method: POST
+        endpoint: /HERMES/controllers/ReporteController.php
+    auth_required: true
+
+  - name: Admin Dashboard
+    description: View and manage all incident reports across campus
+    files:
+      - public/admin/dashboard.php
+      - public/api/admin_reportes.php
+    entry_route: /HERMES/public/admin/dashboard.php
+    user_interactions:
+      - View list of all reports (Robo, Accidente, Falla) with student info
+      - Switch between tab panels
+      - View reports on the campus map
+      - Mark reports as resolved
+    api_calls:
+      - method: GET
+        endpoint: /HERMES/public/api/admin_reportes.php
+    auth_required: true
+
+known_limitations:
+  - issue: crear_reporte.php form requires GPS permission; submit button stays disabled if browser denies geolocation
+    location: public/crear_reporte.php
+    impact: Users who deny GPS cannot submit reports
+  - issue: confirmar_2fa.php lacks session auth check before processing
+    location: public/confirmar_2fa.php
+    impact: Security gap — unauthenticated users could potentially access this page
+  - issue: desactivar_2fa.php is referenced in the sidebar but does not exist
+    location: public/admin/dashboard.php sidebar
+    impact: Clicking the link results in a 404 error
+  - issue: Dashboard alerts section loads from real DB but map markers depend on reportes_mapa.php being functional
+    location: public/dashboard.php
+    impact: If API fails, map shows no markers silently

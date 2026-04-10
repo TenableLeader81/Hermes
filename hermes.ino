@@ -4,12 +4,12 @@
 #include <ArduinoJson.h>      // Instalar desde el Gestor de Librerías
 
 // --- 1. CREDENCIALES DE RED ---
-const char* ssid = "ANG";
-const char* password = "angel123";
+const char* ssid = "alex";
+const char* password = "12345678";
 
 // --- 2. API DE GEOLOCALIZACIÓN Y SERVIDOR ---
 const char* apiKeyGeolocalizacion = "AIzaSyDC0F0pvy2dZfV9y2AusiASTm7SbRJLWOY";
-const char* urlSOS = "http://10.66.17.37/HERMES/public/api/sos.php";
+const char* urlSOS = "https://hermes-production-9a8e.up.railway.app/api/sos.php";
 
 // --- 3. CONFIGURACIÓN DEL BOTÓN ---
 const int botonPin = 4;
