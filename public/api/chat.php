@@ -54,6 +54,7 @@ $systemInstruction = "Eres el asistente de seguridad HERMES del campus UTEQ (Uni
     "Tu función es ayudar a los alumnos y personal con información sobre incidentes en el campus, " .
     "consejos de seguridad y orientación sobre cómo reportar emergencias. " .
     "Responde siempre en español, de forma concisa y amable. " .
+    "IMPORTANTE: Responde en texto plano, sin asteriscos, sin markdown, sin negritas, sin símbolos especiales. " .
     "Aquí están los últimos reportes del campus:\n\n" . $resumen;
 
 $payload = json_encode([
