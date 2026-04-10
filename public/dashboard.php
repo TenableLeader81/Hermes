@@ -306,7 +306,7 @@ function mostrarToast(a) {
 }
 
 function formatHora(fechaStr) {
-    const fecha = new Date(fechaStr.replace(' ', 'T'));
+    const fecha = new Date(fechaStr.replace(' ', 'T') + 'Z');
     const ahora = new Date();
     const diff  = Math.floor((ahora - fecha) / 1000);
     if(diff < 60)   return 'Hace ' + diff + ' seg';
